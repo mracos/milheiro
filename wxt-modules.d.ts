@@ -4,10 +4,12 @@
 // wxt.config.ts typecheck.
 import type { SafariXcodeOptions } from 'wxt-module-safari-xcode';
 import type { AutoIconsOptions } from '@wxt-dev/auto-icons';
+import type { SafariInstallOptions } from 'wxt-module-safari-install';
 
 declare module 'wxt' {
   interface InlineConfig {
     safariXcode?: SafariXcodeOptions;
     autoIcons?: AutoIconsOptions;
+    safariInstall?: SafariInstallOptions;
   }
 }

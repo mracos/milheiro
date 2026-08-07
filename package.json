@@ -21,11 +21,15 @@
   },
   "license": "MIT",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.2.5",
     "@types/node": "^26.1.2",
     "@wxt-dev/auto-icons": "^1.1.2",
+    "wxt-module-safari-install": "*",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.9.0",
