@@ -1,151 +1,20 @@
-.mlh-badge {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 2147483647;
-  width: 300px;
+/* Inline R$/milheiro chip injected next to LATAM's flight prices. */
+.mlh-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 10px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #1a1a1a;
-  background: #fff;
-  border: 1px solid #d9d9de;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-}
-
-.mlh-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: #0d1b3e;
-  color: #fff;
-}
-.mlh-logo {
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.mlh-x {
-  border: 0;
-  background: transparent;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: middle;
   color: #fff;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 2px;
 }
-
-.mlh-body {
-  padding: 12px;
+.mlh-chip.mlh-ok {
+  background: #12693a;
 }
-.mlh-hint {
-  margin: 0 0 8px;
-}
-
-.mlh-cashrow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.mlh-cashrow span {
-  color: #666;
-}
-.mlh-cash {
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.mlh-go {
-  width: 100%;
-  padding: 7px;
-  border: 0;
-  border-radius: 6px;
-  background: #0d1b3e;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.mlh-verdict {
-  font-weight: 700;
-  font-size: 15px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  text-align: center;
-}
-.mlh-verdict.mlh-miles {
-  background: #e6f7ec;
-  color: #12693a;
-}
-.mlh-verdict.mlh-cash {
-  background: #fdecec;
-  color: #9a2020;
-}
-
-.mlh-sub {
-  margin: 8px 0 6px;
-  color: #555;
-  text-align: center;
-}
-
-.mlh-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.mlh-table th,
-.mlh-table td {
-  padding: 4px 6px;
-  text-align: right;
-  border-top: 1px solid #eee;
-}
-.mlh-table th:first-child,
-.mlh-table td:first-child {
-  text-align: left;
-}
-.mlh-table th {
-  color: #888;
-  font-weight: 600;
-}
-.mlh-best {
-  background: #f0fbf4;
-}
-
-@media (prefers-color-scheme: dark) {
-  .mlh-badge {
-    color: #eaeaea;
-    background: #1c1c22;
-    border-color: #34343c;
-  }
-  .mlh-cash {
-    background: #26262e;
-    border-color: #3a3a44;
-    color: #eaeaea;
-  }
-  .mlh-sub {
-    color: #aaa;
-  }
-  .mlh-table th {
-    color: #999;
-  }
-  .mlh-table th,
-  .mlh-table td {
-    border-top-color: #2e2e36;
-  }
-  .mlh-verdict.mlh-miles {
-    background: #123322;
-    color: #6fe0a0;
-  }
-  .mlh-verdict.mlh-cash {
-    background: #3a1717;
-    color: #f09a9a;
-  }
-  .mlh-best {
-    background: #16261c;
-  }
+.mlh-chip.mlh-bad {
+  background: #9a2020;
 }

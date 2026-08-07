@@ -1,7 +1,11 @@
-// Content script (isolated world). Injects the page-context interceptor,
-// reads LATAM's miles offers straight off the captured payload (cash is already
-// in there), and paints a verdict badge. No second request, no cash anchor.
-import { readLatamOffers, summarizeLatam, type LatamSummary } from './calc.ts';
+// Content script (isolated world). Injects the page-context interceptor, reads
+// LATAM's miles offers off the captured payload, and annotates each flight card
+// and fare brand in LATAM's own UI with an R$/milheiro chip.
+//
+// DOM join (stable data-testids, same order as the JSON content[]):
+//   flight card    -> [data-testid="flight-info-${i}-amount"]
+//   fare brand     -> [data-testid="flight-${i}-price-${BRANDTEXT}"]
+import { readLatamOffers, chipFor, type LatamBrand } from './calc.ts';
 
 declare const browser: typeof chrome | undefined;
 const api = typeof browser !== 'undefined' ? browser : chrome;
@@ -17,13 +21,17 @@ try {
   console.warn('[milheiro] could not inject interceptor', e);
 }
 
-// 2. Listen for payloads forwarded by the interceptor.
+let offers: LatamBrand[] = [];
+let baseline: number | string = DEFAULT_BASELINE;
+let observer: MutationObserver | null = null;
+
+// 2. Capture miles payloads.
 window.addEventListener('message', (ev: MessageEvent) => {
   if (ev.source !== window) return;
   const d = ev.data;
   if (!d || d.source !== 'milheiro' || d.kind !== 'payload') return;
 
-  let brands;
+  let brands: LatamBrand[];
   try {
     brands = readLatamOffers(d.data);
   } catch {
@@ -31,72 +39,66 @@ window.addEventListener('message', (ev: MessageEvent) => {
   }
   if (!brands.length) return;
 
+  offers = brands;
   console.log('[milheiro] read', brands.length, 'miles brands from', d.url);
-  void renderBadge(brands);
+  void start();
 });
 
-async function renderBadge(brands: ReturnType<typeof readLatamOffers>): Promise<void> {
-  let store: Record<string, unknown> = {};
+async function start(): Promise<void> {
   try {
-    store = await api.storage.local.get(['baseline']);
+    const store = await api.storage.local.get(['baseline']);
+    baseline = store.baseline != null ? (store.baseline as string | number) : DEFAULT_BASELINE;
   } catch {
     /* storage unavailable */
   }
-  const baseline = store.baseline != null ? (store.baseline as string | number) : DEFAULT_BASELINE;
-  paint(ensureBadge(), summarizeLatam(brands, baseline), baseline);
-}
-
-function paint(el: HTMLElement, s: LatamSummary, baseline: string | number): void {
-  const body = el.querySelector('.mlh-body') as HTMLElement;
-  if (!s.best) {
-    body.innerHTML = '<p class="mlh-hint">Sem ofertas em milhas nesta busca.</p>';
-    return;
+  inject();
+  // LATAM is an SPA: cards render lazily and brands appear on expand. Re-inject
+  // whenever the DOM changes (debounced; place() is idempotent).
+  if (!observer) {
+    observer = new MutationObserver(debounce(inject, 150));
+    observer.observe(document.body, { childList: true, subtree: true });
   }
-  const useMiles = s.verdict === 'miles';
-  const rows = s.perFlight
-    .slice(0, 6)
-    .map(
-      ({ best }) =>
-        `<tr><td>${best.flightCode}</td>` +
-        `<td>${fmtInt(best.miles)}</td>` +
-        `<td>R$ ${fmtMoney(best.cashWithoutTax)}</td>` +
-        `<td><b>${fmtMoney(best.milheiro)}</b></td></tr>`,
-    )
-    .join('');
-  const more = s.perFlight.length > 6 ? `<div class="mlh-sub">+${s.perFlight.length - 6} voos</div>` : '';
-
-  body.innerHTML =
-    `<div class="mlh-verdict ${useMiles ? 'mlh-miles' : 'mlh-cash'}">` +
-    (useMiles ? 'Usa milhas' : 'Paga em reais') +
-    `</div>` +
-    `<div class="mlh-sub">melhor <b>R$ ${fmtMoney(s.best.milheiro)}/milheiro</b> ` +
-    `vs baseline R$ ${fmtMoney(baseline)}</div>` +
-    `<table class="mlh-table"><thead><tr>` +
-    `<th>voo</th><th>milhas</th><th>R$</th><th>/milheiro</th>` +
-    `</tr></thead><tbody>${rows}</tbody></table>` +
-    more;
 }
 
-let badgeEl: HTMLElement | null = null;
-function ensureBadge(): HTMLElement {
-  if (badgeEl && document.body.contains(badgeEl)) return badgeEl;
-  badgeEl = document.createElement('div');
-  badgeEl.className = 'mlh-badge';
-  badgeEl.innerHTML =
-    `<div class="mlh-head"><span class="mlh-logo">milheiro</span>` +
-    `<button class="mlh-x" title="fechar">×</button></div>` +
-    `<div class="mlh-body"></div>`;
-  document.body.appendChild(badgeEl);
-  (badgeEl.querySelector('.mlh-x') as HTMLButtonElement).addEventListener('click', () =>
-    badgeEl?.remove(),
-  );
-  return badgeEl;
+function inject(): void {
+  // per-brand chips (visible when a flight is expanded)
+  for (const b of offers) {
+    place(`flight-${b.flightIndex}-price-${b.brandText}`, b);
+  }
+  // per-flight chip on the collapsed card: the cheapest (entry) brand
+  const cheapest = new Map<number, LatamBrand>();
+  for (const b of offers) {
+    const cur = cheapest.get(b.flightIndex);
+    if (!cur || b.miles < cur.miles) cheapest.set(b.flightIndex, b);
+  }
+  for (const [idx, b] of cheapest) {
+    place(`flight-info-${idx}-amount`, b);
+  }
 }
 
-function fmtInt(n: number): string {
-  return Number.isFinite(n) ? n.toLocaleString('pt-BR') : '—';
+function place(testid: string, brand: LatamBrand): void {
+  const host = document.querySelector<HTMLElement>(`[data-testid="${testid}"]`);
+  if (!host || host.querySelector('.mlh-chip')) return;
+
+  const { text, ok } = chipFor(brand, baseline);
+  const chip = document.createElement('span');
+  chip.className = `mlh-chip ${ok ? 'mlh-ok' : 'mlh-bad'}`;
+  chip.textContent = text;
+  chip.title =
+    `${brand.miles.toLocaleString('pt-BR')} milhas · fare R$ ${money(brand.cashWithoutTax)} · ` +
+    `${ok ? 'acima' : 'abaixo'} do baseline R$ ${money(baseline)}`;
+  host.appendChild(chip);
 }
-function fmtMoney(n: number | string): string {
+
+function debounce<T extends () => void>(fn: T, ms: number): () => void {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return () => {
+    if (t) clearTimeout(t);
+    t = setTimeout(fn, ms);
+  };
+}
+
+function money(n: number | string): string {
   const v = typeof n === 'number' ? n : parseFloat(String(n));
   return Number.isFinite(v)
     ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
