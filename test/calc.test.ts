@@ -7,6 +7,7 @@ import {
   extractOffers,
   readLatamOffers,
   summarizeLatam,
+  chipFor,
   type AnalyzeInput,
 } from '../src/calc.ts';
 
@@ -90,6 +91,7 @@ test('readLatamOffers pulls miles + cash from a real miles payload', () => {
 
   assert.strictEqual(brands.length, 4);
   const light = brands[0];
+  assert.strictEqual(light.flightIndex, 0);
   assert.strictEqual(light.flightCode, 'LA3898');
   assert.strictEqual(light.brandText, 'LIGHT');
   assert.strictEqual(light.cabin, 'Economy');
@@ -123,4 +125,14 @@ test('summarizeLatam picks best VPM, verdict, and entry price per flight', () =>
   assert.strictEqual(paysCash.verdict, 'cash');
 
   assert.strictEqual(summarizeLatam([], 25).verdict, 'unknown');
+});
+
+test('chipFor formats label and flags baseline', () => {
+  const [light] = readLatamOffers(milesPayload);
+
+  const ok = chipFor(light, 25);
+  assert.strictEqual(ok.text, 'R$ 28,8/mi');
+  assert.strictEqual(ok.ok, true);
+
+  assert.strictEqual(chipFor(light, 40).ok, false);
 });

@@ -185,6 +185,7 @@ export function extractOffers(rootNode: unknown): ExtractedOffers {
 //   taxes:           { currency: "BRL", amount }            -> paid either way
 // milheiro = cash you avoid by paying miles, per 1000 miles.
 export interface LatamBrand {
+  flightIndex: number; // position in content[], matches DOM data-testid index
   flightCode: string;
   brandText: string;
   cabin: string;
@@ -207,8 +208,8 @@ export function readLatamOffers(payload: unknown): LatamBrand[] {
   const content = root?.content;
   if (!Array.isArray(content)) return out;
 
-  for (const offer of content) {
-    const summary = asObj(asObj(offer)?.summary);
+  for (let flightIndex = 0; flightIndex < content.length; flightIndex++) {
+    const summary = asObj(asObj(content[flightIndex])?.summary);
     if (!summary) continue;
     const flightCode = asStr(summary.flightCode);
     const brands = summary.brands;
@@ -226,6 +227,7 @@ export function readLatamOffers(payload: unknown): LatamBrand[] {
       const taxes = amount(b.taxes);
 
       out.push({
+        flightIndex,
         flightCode,
         brandText: asStr(b.brandText),
         cabin: asStr(asObj(b.cabin)?.label),
@@ -273,4 +275,14 @@ export function summarizeLatam(brands: LatamBrand[], baseline: number | string):
   if (best && Number.isFinite(bl)) verdict = best.milheiro >= bl ? 'miles' : 'cash';
 
   return { best, verdict, perFlight };
+}
+
+// Label + verdict for a single inline chip. `ok` = this brand beats the
+// baseline (worth paying in miles). Formatting is deterministic (pt-BR) so it
+// is stable to assert in tests.
+export function chipFor(brand: LatamBrand, baseline: number | string): { text: string; ok: boolean } {
+  const bl = parseBRL(baseline);
+  const ok = Number.isFinite(bl) ? brand.milheiro >= bl : true;
+  const text = `R$ ${brand.milheiro.toFixed(1).replace('.', ',')}/mi`;
+  return { text, ok };
 }
