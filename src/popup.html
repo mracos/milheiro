@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Milheiro</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        width: 340px;
+        margin: 0;
+        padding: 14px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+        color: #1a1a1a;
+        background: #fff;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 2px;
+      }
+      .sub {
+        color: #777;
+        margin: 0 0 12px;
+        font-size: 12px;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 10px 0 4px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 7px 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+        background: #fff;
+        color: inherit;
+      }
+      textarea {
+        min-height: 84px;
+        resize: vertical;
+        white-space: pre;
+      }
+      .hint {
+        color: #888;
+        font-size: 11px;
+        margin: 3px 0 0;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      .row > div {
+        flex: 1;
+      }
+      button {
+        margin-top: 12px;
+        width: 100%;
+        padding: 9px;
+        border: 0;
+        border-radius: 7px;
+        background: #0d1b3e;
+        color: #fff;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button.ghost {
+        background: transparent;
+        color: #0d1b3e;
+        border: 1px solid #0d1b3e;
+        margin-top: 6px;
+      }
+      #result {
+        margin-top: 14px;
+      }
+      .verdict {
+        font-weight: 700;
+        font-size: 15px;
+        text-align: center;
+        padding: 9px;
+        border-radius: 8px;
+      }
+      .verdict.miles {
+        background: #e6f7ec;
+        color: #12693a;
+      }
+      .verdict.cash {
+        background: #fdecec;
+        color: #9a2020;
+      }
+      .vsub {
+        text-align: center;
+        color: #555;
+        margin: 8px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      th,
+      td {
+        padding: 4px 6px;
+        text-align: right;
+        border-top: 1px solid #eee;
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      th {
+        color: #888;
+      }
+      tr.best {
+        background: #f0fbf4;
+        font-weight: 600;
+      }
+      .marg {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #777;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #eaeaea;
+          background: #1c1c22;
+        }
+        input,
+        textarea {
+          background: #26262e;
+          border-color: #3a3a44;
+          color: #eaeaea;
+        }
+        button.ghost {
+          color: #9fb3ff;
+          border-color: #9fb3ff;
+        }
+        .vsub {
+          color: #aaa;
+        }
+        th {
+          color: #999;
+        }
+        th,
+        td {
+          border-top-color: #2e2e36;
+        }
+        .verdict.miles {
+          background: #123322;
+          color: #6fe0a0;
+        }
+        .verdict.cash {
+          background: #3a1717;
+          color: #f09a9a;
+        }
+        tr.best {
+          background: #16261c;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>milhas ou reais?</h1>
+    <p class="sub">Compara R$/milheiro contra o seu baseline.</p>
+
+    <label for="baseline">Seu baseline (R$/milheiro)</label>
+    <input id="baseline" type="text" inputmode="decimal" placeholder="25" />
+    <p class="hint">
+      Quanto vale 1.000 milhas pra você. Casual: ~20. Acumulador de executiva: ~45.
+    </p>
+
+    <label for="cash">Preço em reais (R$)</label>
+    <input id="cash" type="text" inputmode="decimal" placeholder="2.484,00" />
+
+    <label for="options">Opções de milhas (uma por linha)</label>
+    <textarea
+      id="options"
+      placeholder="70.655 + 90,20&#10;63.590 + 457,58&#10;49.459 + 1.001,63&#10;35.328 + 1.467,95"
+    ></textarea>
+    <p class="hint">Formato: <code>milhas + reais</code>. Cola direto da LATAM.</p>
+
+    <button id="calc">Calcular</button>
+    <button id="pull" class="ghost">Puxar última captura da LATAM</button>
+
+    <div id="result"></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
