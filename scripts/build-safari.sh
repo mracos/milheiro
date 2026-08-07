@@ -75,10 +75,16 @@ fi
 APP="$(/usr/bin/find "$DERIVED/Build/Products/Release" -maxdepth 1 -name "$APP_NAME.app" | head -1)"
 echo "==> built + signed: $APP"
 
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+
 if [[ "${MILHEIRO_NO_INSTALL:-}" != "1" ]]; then
   echo "==> installing to /Applications and launching (registers the extension)"
   rm -rf "/Applications/$APP_NAME.app"
   cp -R "$APP" /Applications/
+  # xcodebuild already registered the DerivedData copy with LaunchServices, so
+  # Safari would list the extension twice. Drop that transient registration and
+  # keep only the /Applications one.
+  "$LSREGISTER" -u "$APP" 2>/dev/null || true
   open "/Applications/$APP_NAME.app"
   echo
   echo "Now enable it: Safari > Settings > Extensions > $APP_NAME"
