@@ -1,7 +1,7 @@
 # milheiro
 
 Milhas ou reais? Extensão de browser que, na LATAM, anota cada voo e cada tarifa
-com o **R$/milheiro** e o veredito contra o **seu baseline** — direto na interface
+com o **R$/milheiro** e o veredito contra o **seu baseline** - direto na interface
 deles, no modo milhas (onde a LATAM esconde o preço em dinheiro).
 
 ## A ideia
@@ -19,7 +19,7 @@ R$/milheiro = tarifa em reais / milhas × 1000
 - **Doméstico LATAM é fixo (~R$28,8/milheiro)**: eles definem as milhas como
   `tarifa / 0,0288`, então a razão não varia. O chip lidera com o **valor em R$**
   (que varia por voo) e deixa a taxa como subscrito. A variação de verdade (e a
-  cor mudando) aparece em internacional/executiva/promo.
+  cor mudando) aparece em internacional/executiva/promoções.
 
 ## Como funciona
 
@@ -62,12 +62,16 @@ npm run test:integration  # Playwright: drift da API/DOM da LATAM (nightly no CI
 ### Safari (macOS)
 
 ```sh
+cp .env.example .env.local   # e preencha APPLE_TEAM_ID (só pra sign 'auto')
 npm run build:safari
 ```
 
-O módulo roda o `safari-web-extension-converter` e configura o projeto Xcode
-(time `693Z55YX47`, bundle `com.mracos.Milheiro`) em `.output/Milheiro/`. Abre no
-Xcode, roda (⌘R), e ativa em Safari → Ajustes → Extensões.
+Dois módulos WXT fazem tudo num comando: `wxt-module-safari-xcode` gera+configura
+o projeto Xcode (bundle `br.com.mracos.milheiro`), e o `wxt-module-safari-install`
+(local, em `packages/`) roda `xcodebuild`, assina e instala em `/Applications`.
+Depois: Safari → Ajustes → Extensões → ativa Milheiro. Signing é `adhoc` por
+padrão (config em `safariInstall.sign`); com adhoc também: Desenvolver → Permitir
+Extensões Não Assinadas.
 
 ## Testes
 

@@ -3,4 +3,5 @@ node_modules/
 .DS_Store
 .wxt/
 .output/
-milheiro-safari/
+.env.local
+.env.*.local
