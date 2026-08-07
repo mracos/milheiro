@@ -1,10 +1,9 @@
-// Runs in the PAGE context (not the isolated content-script world) so it can
-// see LATAM's own fetch/XHR responses. It monkeypatches both, and forwards any
-// JSON payload that looks fare-related to the content script via postMessage.
-// It never blocks or mutates the responses.
-(function () {
-  'use strict';
+import { defineUnlistedScript } from '#imports';
 
+// Runs in the PAGE (main) world via injectScript, so it can see LATAM's own
+// fetch/XHR responses. Monkeypatches both and forwards fare-related JSON to the
+// content script via postMessage. Never blocks or mutates responses.
+export default defineUnlistedScript(() => {
   const URL_RE = /(offer|fare|search|availab|redempt|pricing|shopping|itiner|flight)/i;
 
   function forward(url: string, text: string): void {
@@ -12,13 +11,12 @@
     let data: unknown;
     try {
       data = JSON.parse(text);
-    } catch (_) {
-      return; // not JSON, ignore
+    } catch {
+      return;
     }
     window.postMessage({ source: 'milheiro', kind: 'payload', url: String(url || ''), data }, '*');
   }
 
-  // fetch
   const origFetch = window.fetch;
   if (typeof origFetch === 'function') {
     window.fetch = function (this: unknown, ...args: Parameters<typeof fetch>): Promise<Response> {
@@ -36,13 +34,14 @@
               .then((t) => forward(url, t))
               .catch(() => {});
           }
-        } catch (_) {}
+        } catch {
+          /* ignore */
+        }
         return res;
       });
     };
   }
 
-  // XMLHttpRequest
   type TaggedXHR = XMLHttpRequest & { __milheiroUrl?: string };
   const origOpen = XMLHttpRequest.prototype.open;
   const origSend = XMLHttpRequest.prototype.send;
@@ -61,8 +60,10 @@
       try {
         const url = this.__milheiroUrl || '';
         if (URL_RE.test(url)) forward(url, this.responseText);
-      } catch (_) {}
+      } catch {
+        /* ignore */
+      }
     });
     return origSend.apply(this, args);
   };
-})();
+});

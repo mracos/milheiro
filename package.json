@@ -4,12 +4,16 @@
   "description": "Browser extension: milhas ou reais? Tells you whether to pay a flight in miles or cash, comparing R$/milheiro against your baseline.",
   "type": "module",
   "scripts": {
-    "build": "node build.mjs",
-    "build:safari": "bash scripts/build-safari.sh",
-    "dev": "node build.mjs --watch",
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "build:safari": "wxt build -b safari",
+    "zip": "wxt zip",
+    "postinstall": "wxt prepare",
     "test": "node --test \"test/*.test.ts\"",
     "test:integration": "node --test test/integration/latam.test.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "wxt prepare && tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -21,13 +25,14 @@
     "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.2.5",
     "@types/node": "^26.1.2",
-    "esbuild": "^0.24.0",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.9.0",
     "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "typescript": "^5.6.0",
-    "typescript-eslint": "^8.66.0"
+    "typescript-eslint": "^8.66.0",
+    "wxt": "^0.21.3",
+    "wxt-module-safari-xcode": "^0.2.2"
   }
 }

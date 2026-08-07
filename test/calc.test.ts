@@ -9,7 +9,7 @@ import {
   summarizeLatam,
   chipFor,
   type AnalyzeInput,
-} from '../src/calc.ts';
+} from '../utils/calc.ts';
 
 const milesPayload = JSON.parse(
   readFileSync(new URL('./fixtures/latam-miles-offers.json', import.meta.url), 'utf8'),

@@ -1,7 +1,6 @@
-import { analyze, parseBRL, type AnalyzeResult, type MilesOption } from './calc.ts';
+import { browser } from '#imports';
+import { analyze, parseBRL, type AnalyzeResult, type MilesOption } from '@/utils/calc';
 
-declare const browser: typeof chrome | undefined;
-const api = typeof browser !== 'undefined' ? browser : chrome;
 const DEFAULT_BASELINE = 25;
 
 interface Stored {
@@ -11,7 +10,7 @@ interface Stored {
   lastOffers?: Array<{ miles: number; cash: number }>;
 }
 function getStored(keys: (keyof Stored)[]): Promise<Stored> {
-  return api.storage.local.get(keys) as Promise<Stored>;
+  return browser.storage.local.get(keys) as Promise<Stored>;
 }
 
 const $ = (id: string) => document.getElementById(id) as HTMLElement;
@@ -20,7 +19,6 @@ const cashEl = $('cash') as HTMLInputElement;
 const optionsEl = $('options') as HTMLTextAreaElement;
 const resultEl = $('result');
 
-// Restore saved state.
 getStored(['baseline', 'lastCash', 'lastOptionsText']).then((v) => {
   baselineEl.value = v.baseline != null ? v.baseline : String(DEFAULT_BASELINE);
   if (v.lastCash) cashEl.value = v.lastCash;
@@ -29,12 +27,11 @@ getStored(['baseline', 'lastCash', 'lastOptionsText']).then((v) => {
 });
 
 baselineEl.addEventListener('change', () => {
-  api.storage.local.set({ baseline: baselineEl.value });
+  void browser.storage.local.set({ baseline: baselineEl.value });
 });
 
 ($('calc') as HTMLButtonElement).addEventListener('click', calculate);
 
-// Pull the latest auto-captured offers from the content script.
 ($('pull') as HTMLButtonElement).addEventListener('click', async () => {
   const { lastOffers } = await getStored(['lastOffers']);
   if (!lastOffers || !lastOffers.length) {
@@ -48,7 +45,6 @@ baselineEl.addEventListener('change', () => {
   calculate();
 });
 
-// Parse the textarea: one option per line, "miles + cash".
 function parseOptions(text: string): MilesOption[] {
   return String(text || '')
     .split('\n')
@@ -65,7 +61,11 @@ function calculate(): void {
   const cashPrice = cashEl.value;
   const options = parseOptions(optionsEl.value);
 
-  api.storage.local.set({ baseline, lastCash: cashPrice, lastOptionsText: optionsEl.value });
+  void browser.storage.local.set({
+    baseline,
+    lastCash: cashPrice,
+    lastOptionsText: optionsEl.value,
+  });
 
   if (!parseBRL(cashPrice) || !options.length) {
     resultEl.innerHTML = '<p class="hint">Preencha o preço em reais e ao menos uma opção.</p>';
