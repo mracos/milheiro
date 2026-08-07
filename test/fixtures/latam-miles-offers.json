@@ -1,0 +1,50 @@
+{
+  "content": [
+    {
+      "summary": {
+        "flightCode": "LA3898",
+        "stopOvers": 0,
+        "origin": { "iataCode": "MCP", "departure": "2026-08-28T13:55:00" },
+        "destination": { "iataCode": "BEL", "arrival": "2026-08-28T14:50:00" },
+        "brands": [
+          {
+            "id": "SL",
+            "offerId": "f22a81914c681608140886f7bd0492e6a481f821e07130b8eb1970ae83d17e83loyalty",
+            "brandText": "LIGHT",
+            "cabin": { "id": "Y", "label": "Economy" },
+            "price": { "currency": "LOYALTY_POINTS", "amount": 71976, "display": "71.976 milhas" },
+            "priceWithOutTax": { "currency": "BRL", "amount": 2072.9, "display": "BRL 2.072,90" },
+            "taxes": { "currency": "BRL", "amount": 51.92, "display": "BRL 51,92" }
+          },
+          {
+            "id": "KM",
+            "offerId": "474c33a7356d18aba3bae5e682a17f9f5f40041bd2a5e93a6cf2f4d1824ee064loyalty",
+            "brandText": "STANDARD",
+            "cabin": { "id": "Y", "label": "Economy" },
+            "price": { "currency": "LOYALTY_POINTS", "amount": 76559, "display": "76.559 milhas" },
+            "priceWithOutTax": { "currency": "BRL", "amount": 2204.9, "display": "BRL 2.204,90" },
+            "taxes": { "currency": "BRL", "amount": 51.92, "display": "BRL 51,92" }
+          },
+          {
+            "id": "KD",
+            "offerId": "b62b44e65d439d1303690ac76a6e5831c8da7754f9dd6f36b4a1429bcdd5054cloyalty",
+            "brandText": "FULL",
+            "cabin": { "id": "Y", "label": "Economy" },
+            "price": { "currency": "LOYALTY_POINTS", "amount": 79510, "display": "79.510 milhas" },
+            "priceWithOutTax": { "currency": "BRL", "amount": 2289.9, "display": "BRL 2.289,90" },
+            "taxes": { "currency": "BRL", "amount": 51.92, "display": "BRL 51,92" }
+          },
+          {
+            "id": "RY",
+            "offerId": "adf9dc34c260678de7463b51838c7e6e46a0e7fb803ee7a140fe5e55c67d4a74loyalty",
+            "brandText": "PREMIUM ECONOMY",
+            "cabin": { "id": "W", "label": "PremiumEconomy" },
+            "price": { "currency": "LOYALTY_POINTS", "amount": 80726, "display": "80.726 milhas" },
+            "priceWithOutTax": { "currency": "BRL", "amount": 2324.9, "display": "BRL 2.324,90" },
+            "taxes": { "currency": "BRL", "amount": 51.92, "display": "BRL 51,92" }
+          }
+        ]
+      }
+    }
+  ]
+}

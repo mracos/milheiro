@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { parseBRL, analyze, extractOffers, type AnalyzeInput } from '../src/calc.ts';
+import { readFileSync } from 'node:fs';
+import { parseBRL, analyze, extractOffers, parseLatamOffers, type AnalyzeInput } from '../src/calc.ts';
+
+const milesPayload = JSON.parse(
+  readFileSync(new URL('./fixtures/latam-miles-offers.json', import.meta.url), 'utf8'),
+);
 
 test('parseBRL handles pt-BR formatting', () => {
   assert.strictEqual(parseBRL('2.484,00'), 2484);
@@ -71,4 +76,29 @@ test('extractOffers digs miles+cash out of nested JSON', () => {
 test('extractOffers ignores out-of-range mile counts', () => {
   const { options } = extractOffers({ points: 5, other: { milesAmount: 9999999999 } });
   assert.strictEqual(options.length, 0);
+});
+
+test('parseLatamOffers pulls miles + cash from a real miles payload', () => {
+  const brands = parseLatamOffers(milesPayload);
+
+  assert.strictEqual(brands.length, 4);
+  const light = brands[0];
+  assert.strictEqual(light.flightCode, 'LA3898');
+  assert.strictEqual(light.brandText, 'LIGHT');
+  assert.strictEqual(light.cabin, 'Economy');
+  assert.strictEqual(light.miles, 71976);
+  assert.strictEqual(light.cashWithoutTax, 2072.9);
+  assert.strictEqual(light.taxes, 51.92);
+  assert.ok(Math.abs(light.milheiro - 28.8) < 0.05, `got ${light.milheiro}`);
+});
+
+test('parseLatamOffers skips cash-only brands and junk', () => {
+  const cashPayload = {
+    content: [
+      { summary: { flightCode: 'LA1', brands: [{ price: { currency: 'BRL', amount: 501 } }] } },
+    ],
+  };
+  assert.strictEqual(parseLatamOffers(cashPayload).length, 0);
+  assert.strictEqual(parseLatamOffers(null).length, 0);
+  assert.strictEqual(parseLatamOffers({}).length, 0);
 });

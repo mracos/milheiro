@@ -177,3 +177,65 @@ export function extractOffers(rootNode: unknown): ExtractedOffers {
 
   return { options };
 }
+
+// LATAM's /bff/air-offers/v2/offers/search (redemption=true) payload already
+// carries the cash value next to the miles, so no second request is needed:
+//   price:           { currency: "LOYALTY_POINTS", amount } -> miles
+//   priceWithOutTax: { currency: "BRL", amount }            -> cash fare (R$)
+//   taxes:           { currency: "BRL", amount }            -> paid either way
+// milheiro = cash you avoid by paying miles, per 1000 miles.
+export interface LatamBrand {
+  flightCode: string;
+  brandText: string;
+  cabin: string;
+  offerId: string;
+  miles: number;
+  cashWithoutTax: number;
+  taxes: number;
+  milheiro: number;
+}
+
+export function parseLatamOffers(payload: unknown): LatamBrand[] {
+  const asObj = (v: unknown): Record<string, unknown> | null =>
+    v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
+  const asNum = (v: unknown): number => (typeof v === 'number' ? v : NaN);
+  const asStr = (v: unknown): string => (typeof v === 'string' ? v : '');
+  const amount = (v: unknown): number => asNum(asObj(v)?.amount);
+
+  const out: LatamBrand[] = [];
+  const root = asObj(payload);
+  const content = root?.content;
+  if (!Array.isArray(content)) return out;
+
+  for (const offer of content) {
+    const summary = asObj(asObj(offer)?.summary);
+    if (!summary) continue;
+    const flightCode = asStr(summary.flightCode);
+    const brands = summary.brands;
+    if (!Array.isArray(brands)) continue;
+
+    for (const raw of brands) {
+      const b = asObj(raw);
+      if (!b) continue;
+      const price = asObj(b.price);
+      if (!price || price.currency !== 'LOYALTY_POINTS') continue;
+
+      const miles = asNum(price.amount);
+      const cashWithoutTax = amount(b.priceWithOutTax);
+      if (!Number.isFinite(miles) || miles <= 0 || !Number.isFinite(cashWithoutTax)) continue;
+      const taxes = amount(b.taxes);
+
+      out.push({
+        flightCode,
+        brandText: asStr(b.brandText),
+        cabin: asStr(asObj(b.cabin)?.label),
+        offerId: asStr(b.offerId),
+        miles,
+        cashWithoutTax,
+        taxes: Number.isFinite(taxes) ? taxes : 0,
+        milheiro: (cashWithoutTax / miles) * 1000,
+      });
+    }
+  }
+  return out;
+}
