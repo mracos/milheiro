@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { parseBRL, analyze, extractOffers, parseLatamOffers, type AnalyzeInput } from '../src/calc.ts';
+import {
+  parseBRL,
+  analyze,
+  extractOffers,
+  readLatamOffers,
+  summarizeLatam,
+  type AnalyzeInput,
+} from '../src/calc.ts';
 
 const milesPayload = JSON.parse(
   readFileSync(new URL('./fixtures/latam-miles-offers.json', import.meta.url), 'utf8'),
@@ -78,8 +85,8 @@ test('extractOffers ignores out-of-range mile counts', () => {
   assert.strictEqual(options.length, 0);
 });
 
-test('parseLatamOffers pulls miles + cash from a real miles payload', () => {
-  const brands = parseLatamOffers(milesPayload);
+test('readLatamOffers pulls miles + cash from a real miles payload', () => {
+  const brands = readLatamOffers(milesPayload);
 
   assert.strictEqual(brands.length, 4);
   const light = brands[0];
@@ -92,13 +99,28 @@ test('parseLatamOffers pulls miles + cash from a real miles payload', () => {
   assert.ok(Math.abs(light.milheiro - 28.8) < 0.05, `got ${light.milheiro}`);
 });
 
-test('parseLatamOffers skips cash-only brands and junk', () => {
+test('readLatamOffers skips cash-only brands and junk', () => {
   const cashPayload = {
     content: [
       { summary: { flightCode: 'LA1', brands: [{ price: { currency: 'BRL', amount: 501 } }] } },
     ],
   };
-  assert.strictEqual(parseLatamOffers(cashPayload).length, 0);
-  assert.strictEqual(parseLatamOffers(null).length, 0);
-  assert.strictEqual(parseLatamOffers({}).length, 0);
+  assert.strictEqual(readLatamOffers(cashPayload).length, 0);
+  assert.strictEqual(readLatamOffers(null).length, 0);
+  assert.strictEqual(readLatamOffers({}).length, 0);
+});
+
+test('summarizeLatam picks best VPM, verdict, and entry price per flight', () => {
+  const brands = readLatamOffers(milesPayload);
+
+  const usesMiles = summarizeLatam(brands, 25);
+  assert.strictEqual(usesMiles.verdict, 'miles');
+  assert.ok(Math.abs((usesMiles.best?.milheiro ?? 0) - 28.8) < 0.05);
+  assert.strictEqual(usesMiles.perFlight.length, 1);
+  assert.strictEqual(usesMiles.perFlight[0].best.brandText, 'LIGHT');
+
+  const paysCash = summarizeLatam(brands, 40);
+  assert.strictEqual(paysCash.verdict, 'cash');
+
+  assert.strictEqual(summarizeLatam([], 25).verdict, 'unknown');
 });

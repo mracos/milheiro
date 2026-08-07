@@ -195,7 +195,7 @@ export interface LatamBrand {
   milheiro: number;
 }
 
-export function parseLatamOffers(payload: unknown): LatamBrand[] {
+export function readLatamOffers(payload: unknown): LatamBrand[] {
   const asObj = (v: unknown): Record<string, unknown> | null =>
     v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
   const asNum = (v: unknown): number => (typeof v === 'number' ? v : NaN);
@@ -238,4 +238,39 @@ export function parseLatamOffers(payload: unknown): LatamBrand[] {
     }
   }
   return out;
+}
+
+export interface LatamFlight {
+  flightCode: string;
+  best: LatamBrand; // cheapest (entry) brand for the flight
+}
+
+export interface LatamSummary {
+  best: LatamBrand | null; // highest R$/milheiro across all brands
+  verdict: Verdict;
+  perFlight: LatamFlight[]; // one row per flight, sorted by miles asc
+}
+
+// Collapse the flat brand list into a decision: the best value on offer, a
+// verdict against the baseline, and the entry price per flight for display.
+export function summarizeLatam(brands: LatamBrand[], baseline: number | string): LatamSummary {
+  const bl = parseBRL(baseline);
+
+  const cheapestByFlight = new Map<string, LatamBrand>();
+  for (const b of brands) {
+    const cur = cheapestByFlight.get(b.flightCode);
+    if (!cur || b.miles < cur.miles) cheapestByFlight.set(b.flightCode, b);
+  }
+  const perFlight: LatamFlight[] = [...cheapestByFlight.values()]
+    .sort((a, b) => a.miles - b.miles)
+    .map((best) => ({ flightCode: best.flightCode, best }));
+
+  const best = brands.length
+    ? brands.reduce((a, b) => (b.milheiro > a.milheiro ? b : a))
+    : null;
+
+  let verdict: Verdict = 'unknown';
+  if (best && Number.isFinite(bl)) verdict = best.milheiro >= bl ? 'miles' : 'cash';
+
+  return { best, verdict, perFlight };
 }
