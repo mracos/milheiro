@@ -7,7 +7,8 @@
     "build": "node build.mjs",
     "build:safari": "bash scripts/build-safari.sh",
     "dev": "node build.mjs --watch",
-    "test": "node --test \"test/**/*.test.ts\"",
+    "test": "node --test \"test/*.test.ts\"",
+    "test:integration": "node --test test/integration/latam.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -24,6 +25,7 @@
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.9.0",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.66.0"
