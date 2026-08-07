@@ -196,49 +196,52 @@ export interface LatamBrand {
   milheiro: number;
 }
 
+// The slice of the payload we read. Everything optional: it's untrusted runtime
+// JSON, so we assert no more than we actually guard with `?.` + typeof below.
+interface LatamPayload {
+  content?: Array<{
+    summary?: {
+      flightCode?: string;
+      brands?: Array<{
+        brandText?: string;
+        offerId?: string;
+        cabin?: { label?: string };
+        price?: { currency?: string; amount?: number };
+        priceWithOutTax?: { amount?: number };
+        taxes?: { amount?: number };
+      }>;
+    };
+  }>;
+}
+
 export function readLatamOffers(payload: unknown): LatamBrand[] {
-  const asObj = (v: unknown): Record<string, unknown> | null =>
-    v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
-  const asNum = (v: unknown): number => (typeof v === 'number' ? v : NaN);
-  const asStr = (v: unknown): string => (typeof v === 'string' ? v : '');
-  const amount = (v: unknown): number => asNum(asObj(v)?.amount);
-
+  const data = payload as LatamPayload;
   const out: LatamBrand[] = [];
-  const root = asObj(payload);
-  const content = root?.content;
-  if (!Array.isArray(content)) return out;
+  if (!Array.isArray(data?.content)) return out;
 
-  for (let flightIndex = 0; flightIndex < content.length; flightIndex++) {
-    const summary = asObj(asObj(content[flightIndex])?.summary);
-    if (!summary) continue;
-    const flightCode = asStr(summary.flightCode);
-    const brands = summary.brands;
-    if (!Array.isArray(brands)) continue;
+  data.content.forEach((offer, flightIndex) => {
+    const brands = offer?.summary?.brands;
+    if (!Array.isArray(brands)) return;
 
-    for (const raw of brands) {
-      const b = asObj(raw);
-      if (!b) continue;
-      const price = asObj(b.price);
-      if (!price || price.currency !== 'LOYALTY_POINTS') continue;
-
-      const miles = asNum(price.amount);
-      const cashWithoutTax = amount(b.priceWithOutTax);
-      if (!Number.isFinite(miles) || miles <= 0 || !Number.isFinite(cashWithoutTax)) continue;
-      const taxes = amount(b.taxes);
+    for (const b of brands) {
+      if (b?.price?.currency !== 'LOYALTY_POINTS') continue;
+      const miles = b.price.amount;
+      const cashWithoutTax = b.priceWithOutTax?.amount;
+      if (typeof miles !== 'number' || miles <= 0 || typeof cashWithoutTax !== 'number') continue;
 
       out.push({
         flightIndex,
-        flightCode,
-        brandText: asStr(b.brandText),
-        cabin: asStr(asObj(b.cabin)?.label),
-        offerId: asStr(b.offerId),
+        flightCode: offer?.summary?.flightCode ?? '',
+        brandText: b.brandText ?? '',
+        cabin: b.cabin?.label ?? '',
+        offerId: b.offerId ?? '',
         miles,
         cashWithoutTax,
-        taxes: Number.isFinite(taxes) ? taxes : 0,
+        taxes: typeof b.taxes?.amount === 'number' ? b.taxes.amount : 0,
         milheiro: (cashWithoutTax / miles) * 1000,
       });
     }
-  }
+  });
   return out;
 }
 
