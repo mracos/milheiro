@@ -1,7 +1,7 @@
 // Content script (isolated world). Injects the page-context interceptor,
-// listens for captured fare payloads, and paints a small verdict badge.
-// Falls back gracefully: if it can't find the cash anchor, it asks for it.
-import { analyze, extractOffers, parseBRL, type AnalyzeResult } from './calc.ts';
+// reads LATAM's miles offers straight off the captured payload (cash is already
+// in there), and paints a verdict badge. No second request, no cash anchor.
+import { readLatamOffers, summarizeLatam, type LatamSummary } from './calc.ts';
 
 declare const browser: typeof chrome | undefined;
 const api = typeof browser !== 'undefined' ? browser : chrome;
@@ -23,104 +23,58 @@ window.addEventListener('message', (ev: MessageEvent) => {
   const d = ev.data;
   if (!d || d.source !== 'milheiro' || d.kind !== 'payload') return;
 
-  let parsed;
+  let brands;
   try {
-    parsed = extractOffers(d.data);
-  } catch (e) {
+    brands = readLatamOffers(d.data);
+  } catch {
     return;
   }
-  if (!parsed || parsed.options.length < 2) return;
+  if (!brands.length) return;
 
-  // Always log so we can refine extractOffers against real schemas.
-  console.log('[milheiro] captured offers from', d.url, parsed.options, d.data);
-
-  try {
-    api.storage.local.set({ lastOffers: parsed.options, lastOffersUrl: d.url });
-  } catch (_) {}
-  void renderBadge(parsed.options);
+  console.log('[milheiro] read', brands.length, 'miles brands from', d.url);
+  void renderBadge(brands);
 });
 
-type Offer = { miles: number; cash: number };
-
-// 3. Render / update the floating badge.
-async function renderBadge(options: Offer[]): Promise<void> {
+async function renderBadge(brands: ReturnType<typeof readLatamOffers>): Promise<void> {
   let store: Record<string, unknown> = {};
   try {
-    store = await api.storage.local.get(['baseline', 'lastCash']);
-  } catch (_) {}
-  const baseline = store.baseline != null ? store.baseline : DEFAULT_BASELINE;
-  const cashPrice = store.lastCash;
-
-  const el = ensureBadge();
-  const body = el.querySelector('.mlh-body') as HTMLElement;
-
-  if (!Number.isFinite(parseBRL(cashPrice))) {
-    // We have miles options but no cash anchor yet.
-    body.innerHTML =
-      `<p class="mlh-hint">Achei <b>${options.length}</b> opções de milhas. ` +
-      `Informe o preço em reais (do Google Flights) pra eu comparar:</p>` +
-      `<div class="mlh-cashrow"><span>R$</span>` +
-      `<input class="mlh-cash" type="text" inputmode="decimal" placeholder="2.484,00"></div>` +
-      `<button class="mlh-go">Calcular</button>`;
-    const input = el.querySelector('.mlh-cash') as HTMLInputElement;
-    const go = () => {
-      const v = input.value;
-      api.storage.local.set({ lastCash: v });
-      paint(el, analyzeSafe(v, options, baseline), baseline);
-    };
-    (el.querySelector('.mlh-go') as HTMLButtonElement).addEventListener('click', go);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') go();
-    });
-    input.focus();
-    return;
+    store = await api.storage.local.get(['baseline']);
+  } catch {
+    /* storage unavailable */
   }
-
-  paint(el, analyzeSafe(cashPrice, options, baseline), baseline);
+  const baseline = store.baseline != null ? (store.baseline as string | number) : DEFAULT_BASELINE;
+  paint(ensureBadge(), summarizeLatam(brands, baseline), baseline);
 }
 
-function analyzeSafe(
-  cashPrice: unknown,
-  options: Offer[],
-  baseline: unknown,
-): AnalyzeResult | null {
-  try {
-    return analyze({ cashPrice: cashPrice as string, options, baseline: baseline as string });
-  } catch (e) {
-    return null;
-  }
-}
-
-function paint(el: HTMLElement, r: AnalyzeResult | null, baseline: unknown): void {
+function paint(el: HTMLElement, s: LatamSummary, baseline: string | number): void {
   const body = el.querySelector('.mlh-body') as HTMLElement;
-  if (!r || !r.best) {
-    body.innerHTML = '<p class="mlh-hint">Não consegui calcular. Use o popup.</p>';
+  if (!s.best) {
+    body.innerHTML = '<p class="mlh-hint">Sem ofertas em milhas nesta busca.</p>';
     return;
   }
-  const best = r.best;
-  const verdictMiles = r.verdict === 'miles';
-  const rows = r.rows
-    .map((row, i) => {
-      const isBest = row.index === best.index;
-      return (
-        `<tr class="${isBest ? 'mlh-best' : ''}">` +
-        `<td>${i + 1}</td>` +
-        `<td>${fmtInt(row.miles)}</td>` +
-        `<td>R$ ${fmtMoney(row.cash)}</td>` +
-        `<td><b>${fmtMoney(row.milheiro)}</b></td></tr>`
-      );
-    })
+  const useMiles = s.verdict === 'miles';
+  const rows = s.perFlight
+    .slice(0, 6)
+    .map(
+      ({ best }) =>
+        `<tr><td>${best.flightCode}</td>` +
+        `<td>${fmtInt(best.miles)}</td>` +
+        `<td>R$ ${fmtMoney(best.cashWithoutTax)}</td>` +
+        `<td><b>${fmtMoney(best.milheiro)}</b></td></tr>`,
+    )
     .join('');
+  const more = s.perFlight.length > 6 ? `<div class="mlh-sub">+${s.perFlight.length - 6} voos</div>` : '';
 
   body.innerHTML =
-    `<div class="mlh-verdict ${verdictMiles ? 'mlh-miles' : 'mlh-cash'}">` +
-    (verdictMiles ? `Usa milhas — opção ${best.index + 1}` : `Paga em reais`) +
+    `<div class="mlh-verdict ${useMiles ? 'mlh-miles' : 'mlh-cash'}">` +
+    (useMiles ? 'Usa milhas' : 'Paga em reais') +
     `</div>` +
-    `<div class="mlh-sub">melhor: <b>R$ ${fmtMoney(best.milheiro)}/milheiro</b> ` +
-    `vs baseline R$ ${fmtMoney(parseBRL(baseline))}</div>` +
+    `<div class="mlh-sub">melhor <b>R$ ${fmtMoney(s.best.milheiro)}/milheiro</b> ` +
+    `vs baseline R$ ${fmtMoney(baseline)}</div>` +
     `<table class="mlh-table"><thead><tr>` +
-    `<th>#</th><th>milhas</th><th>+R$</th><th>R$/milheiro</th>` +
-    `</tr></thead><tbody>${rows}</tbody></table>`;
+    `<th>voo</th><th>milhas</th><th>R$</th><th>/milheiro</th>` +
+    `</tr></thead><tbody>${rows}</tbody></table>` +
+    more;
 }
 
 let badgeEl: HTMLElement | null = null;
@@ -142,8 +96,9 @@ function ensureBadge(): HTMLElement {
 function fmtInt(n: number): string {
   return Number.isFinite(n) ? n.toLocaleString('pt-BR') : '—';
 }
-function fmtMoney(n: number): string {
-  return Number.isFinite(n)
-    ? n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function fmtMoney(n: number | string): string {
+  const v = typeof n === 'number' ? n : parseFloat(String(n));
+  return Number.isFinite(v)
+    ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : '—';
 }
