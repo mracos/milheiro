@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 # One-shot Safari build: bundle -> convert to an Xcode project -> build + sign
-# -> install to /Applications. Signs with a real Apple Development cert so the
-# extension survives Safari restarts (no "allow unsigned" dance).
+# -> install to /Applications.
 #
-#   MILHEIRO_TEAM   Apple Developer team ID (default: personal dev team)
-#   MILHEIRO_NO_INSTALL=1   build + sign only, skip copy to /Applications
+#   MILHEIRO_SIGN=auto   (default) proper signing with MILHEIRO_TEAM; survives
+#                        Safari restarts. Needs your Apple ID in Xcode Accounts.
+#   MILHEIRO_SIGN=adhoc  ad-hoc local signing; always builds, no account needed,
+#                        but Safari needs Develop > Allow Unsigned Extensions.
+#   MILHEIRO_TEAM        Apple Developer team ID (default: personal dev team)
+#   MILHEIRO_NO_INSTALL=1   build only, skip copy to /Applications
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 APP_NAME="Milheiro"
-BUNDLE_ID="com.mracos.milheiro"
+# Must match the app bundle id the converter derives (com.<org>.<AppName>, app
+# name capitalized) so the extension id (<BUNDLE_ID>.Extension) is prefixed by
+# it. Mismatched casing => "Embedded binary's bundle identifier is not prefixed".
+BUNDLE_ID="com.mracos.Milheiro"
 TEAM="${MILHEIRO_TEAM:-693Z55YX47}"
 PROJ_DIR="$ROOT/build/safari"
 DERIVED="$PROJ_DIR/DerivedData"
@@ -38,14 +44,33 @@ fi
 SCHEME="$(xcodebuild -list -project "$XCPROJ" -json 2>/dev/null \
   | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["project"]["schemes"][0])')"
 
-echo "==> building + signing (team $TEAM, scheme $SCHEME)"
-xcodebuild -project "$XCPROJ" \
-  -scheme "$SCHEME" \
-  -configuration Release \
-  -derivedDataPath "$DERIVED" \
-  DEVELOPMENT_TEAM="$TEAM" \
-  CODE_SIGN_STYLE=Automatic \
-  build
+SIGN="${MILHEIRO_SIGN:-auto}"
+if [[ "$SIGN" == "adhoc" ]]; then
+  # Ad-hoc local signing: always builds, no Apple account needed. Safari treats
+  # it as unsigned, so enable Develop > Allow Unsigned Extensions once per launch.
+  echo "==> building (ad-hoc local signing, scheme $SCHEME)"
+  xcodebuild -project "$XCPROJ" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -derivedDataPath "$DERIVED" \
+    CODE_SIGN_STYLE=Manual \
+    CODE_SIGN_IDENTITY="-" \
+    DEVELOPMENT_TEAM="" \
+    PROVISIONING_PROFILE_SPECIFIER="" \
+    build
+else
+  # Proper signing: needs your Apple ID in Xcode > Settings > Accounts.
+  # -allowProvisioningUpdates lets xcodebuild create/download the profile.
+  echo "==> building + signing (team $TEAM, scheme $SCHEME)"
+  xcodebuild -project "$XCPROJ" \
+    -scheme "$SCHEME" \
+    -configuration Release \
+    -derivedDataPath "$DERIVED" \
+    -allowProvisioningUpdates \
+    DEVELOPMENT_TEAM="$TEAM" \
+    CODE_SIGN_STYLE=Automatic \
+    build
+fi
 
 APP="$(/usr/bin/find "$DERIVED/Build/Products/Release" -maxdepth 1 -name "$APP_NAME.app" | head -1)"
 echo "==> built + signed: $APP"
@@ -57,4 +82,7 @@ if [[ "${MILHEIRO_NO_INSTALL:-}" != "1" ]]; then
   open "/Applications/$APP_NAME.app"
   echo
   echo "Now enable it: Safari > Settings > Extensions > $APP_NAME"
+  if [[ "$SIGN" == "adhoc" ]]; then
+    echo "Ad-hoc build: also Safari > Develop > Allow Unsigned Extensions"
+  fi
 fi
