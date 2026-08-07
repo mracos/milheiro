@@ -267,9 +267,7 @@ export function summarizeLatam(brands: LatamBrand[], baseline: number | string):
     .sort((a, b) => a.miles - b.miles)
     .map((best) => ({ flightCode: best.flightCode, best }));
 
-  const best = brands.length
-    ? brands.reduce((a, b) => (b.milheiro > a.milheiro ? b : a))
-    : null;
+  const best = brands.length ? brands.reduce((a, b) => (b.milheiro > a.milheiro ? b : a)) : null;
 
   let verdict: Verdict = 'unknown';
   if (best && Number.isFinite(bl)) verdict = best.milheiro >= bl ? 'miles' : 'cash';
@@ -280,7 +278,10 @@ export function summarizeLatam(brands: LatamBrand[], baseline: number | string):
 // Label + verdict for a single inline chip. `ok` = this brand beats the
 // baseline (worth paying in miles). Formatting is deterministic (pt-BR) so it
 // is stable to assert in tests.
-export function chipFor(brand: LatamBrand, baseline: number | string): { text: string; ok: boolean } {
+export function chipFor(
+  brand: LatamBrand,
+  baseline: number | string,
+): { text: string; ok: boolean } {
   const bl = parseBRL(baseline);
   const ok = Number.isFinite(bl) ? brand.milheiro >= bl : true;
   const text = `R$ ${brand.milheiro.toFixed(1).replace('.', ',')}/mi`;
