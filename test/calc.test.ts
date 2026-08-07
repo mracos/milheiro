@@ -127,12 +127,15 @@ test('summarizeLatam picks best VPM, verdict, and entry price per flight', () =>
   assert.strictEqual(summarizeLatam([], 25).verdict, 'unknown');
 });
 
-test('chipFor formats label and flags baseline', () => {
+test('chipFor shows the cash value, rate, and baseline verdict', () => {
   const [light] = readLatamOffers(milesPayload);
 
-  const ok = chipFor(light, 25);
-  assert.strictEqual(ok.text, 'R$ 28,8/mi');
-  assert.strictEqual(ok.ok, true);
+  const c = chipFor(light, 25);
+  assert.strictEqual(c.text, '≈ R$ 2.073'); // cashWithoutTax 2072.90 rounded
+  assert.strictEqual(c.sub, '28,8/mi');
+  assert.strictEqual(c.ok, true);
+  assert.match(c.title, /71\.976 milhas = R\$ 2\.072,90 de tarifa/);
+  assert.match(c.title, /acima do baseline R\$ 25,00/);
 
   assert.strictEqual(chipFor(light, 40).ok, false);
 });

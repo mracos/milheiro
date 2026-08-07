@@ -80,13 +80,15 @@ function place(testid: string, brand: LatamBrand): void {
   const host = document.querySelector<HTMLElement>(`[data-testid="${testid}"]`);
   if (!host || host.querySelector('.mlh-chip')) return;
 
-  const { text, ok } = chipFor(brand, baseline);
+  const { text, sub, ok, title } = chipFor(brand, baseline);
   const chip = document.createElement('span');
   chip.className = `mlh-chip ${ok ? 'mlh-ok' : 'mlh-bad'}`;
-  chip.textContent = text;
-  chip.title =
-    `${brand.miles.toLocaleString('pt-BR')} milhas · fare R$ ${money(brand.cashWithoutTax)} · ` +
-    `${ok ? 'acima' : 'abaixo'} do baseline R$ ${money(baseline)}`;
+  chip.title = title;
+  chip.append(text, ' ');
+  const subEl = document.createElement('span');
+  subEl.className = 'mlh-sub';
+  subEl.textContent = sub;
+  chip.appendChild(subEl);
   host.appendChild(chip);
 }
 
@@ -96,11 +98,4 @@ function debounce<T extends () => void>(fn: T, ms: number): () => void {
     if (t) clearTimeout(t);
     t = setTimeout(fn, ms);
   };
-}
-
-function money(n: number | string): string {
-  const v = typeof n === 'number' ? n : parseFloat(String(n));
-  return Number.isFinite(v)
-    ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : '—';
 }

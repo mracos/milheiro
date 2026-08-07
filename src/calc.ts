@@ -275,15 +275,41 @@ export function summarizeLatam(brands: LatamBrand[], baseline: number | string):
   return { best, verdict, perFlight };
 }
 
-// Label + verdict for a single inline chip. `ok` = this brand beats the
-// baseline (worth paying in miles). Formatting is deterministic (pt-BR) so it
-// is stable to assert in tests.
-export function chipFor(
-  brand: LatamBrand,
-  baseline: number | string,
-): { text: string; ok: boolean } {
+// pt-BR number formatting, deterministic (no toLocaleString) so it's stable to
+// assert in tests and identical across environments.
+function grpInt(n: number): string {
+  return Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function brl2(n: number): string {
+  const [int, dec] = n.toFixed(2).split('.');
+  return `${int.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${dec}`;
+}
+
+export interface Chip {
+  text: string; // primary, varies per fare: "≈ R$ 2.052"
+  sub: string; // the constant-ish rate: "28,8/mi"
+  ok: boolean; // beats the baseline?
+  title: string; // full breakdown for the tooltip
+}
+
+// What a single inline chip shows. In miles mode LATAM hides the cash price, so
+// the primary number is the cash fare the miles are worth (varies per flight);
+// the rate and verdict are secondary/detail.
+export function chipFor(brand: LatamBrand, baseline: number | string): Chip {
   const bl = parseBRL(baseline);
   const ok = Number.isFinite(bl) ? brand.milheiro >= bl : true;
-  const text = `R$ ${brand.milheiro.toFixed(1).replace('.', ',')}/mi`;
-  return { text, ok };
+  const sub = `${brand.milheiro.toFixed(1).replace('.', ',')}/mi`;
+  const verdict = !Number.isFinite(bl)
+    ? ''
+    : ok
+      ? ` · acima do baseline R$ ${brl2(bl)}`
+      : ` · abaixo do baseline R$ ${brl2(bl)}`;
+  return {
+    text: `≈ R$ ${grpInt(brand.cashWithoutTax)}`,
+    sub,
+    ok,
+    title: `${grpInt(brand.miles)} milhas = R$ ${brl2(brand.cashWithoutTax)} de tarifa · R$ ${sub}lheiro${verdict}`,
+  };
 }

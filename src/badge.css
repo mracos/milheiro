@@ -18,3 +18,8 @@
 .mlh-chip.mlh-bad {
   background: #9a2020;
 }
+.mlh-chip .mlh-sub {
+  opacity: 0.75;
+  font-weight: 600;
+  font-size: 10px;
+}
