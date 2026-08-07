@@ -14,7 +14,12 @@ export default defineContentScript({
   cssInjectionMode: 'manifest',
 
   async main() {
-    await injectScript('/inject.js', { keepInDom: true });
+    console.log('[milheiro] content script loaded on', location.pathname);
+    try {
+      await injectScript('/inject.js', { keepInDom: true });
+    } catch (e) {
+      console.warn('[milheiro] injectScript failed', e);
+    }
 
     let offers: LatamBrand[] = [];
     let baseline: number | string = DEFAULT_BASELINE;
@@ -31,10 +36,12 @@ export default defineContentScript({
       } catch {
         return;
       }
+      // Log every captured fare payload (even 0 miles brands, e.g. cash mode) so
+      // it's clear the interceptor is working.
+      console.log('[milheiro] captured', d.url, '→', brands.length, 'miles brands');
       if (!brands.length) return;
 
       offers = brands;
-      console.log('[milheiro] read', brands.length, 'miles brands from', d.url);
       void start();
     });
 
