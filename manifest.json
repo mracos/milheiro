@@ -5,9 +5,19 @@
   "description": "Diz se vale mais comprar a passagem em milhas ou em reais, comparando R$/milheiro contra o seu baseline.",
   "permissions": ["storage"],
   "host_permissions": ["*://*.latamairlines.com/*"],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Milheiro — milhas ou reais?"
+    "default_title": "Milheiro — milhas ou reais?",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   },
   "content_scripts": [
     {

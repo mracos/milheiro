@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="28" fill="#0d1b3e"/>
+  <!-- paper plane: two shades for the fold -->
+  <path d="M20 60 L108 24 L84 106 L60 80 Z" fill="#ffffff"/>
+  <path d="M60 80 L108 24 L84 106 Z" fill="#9fb3ff"/>
+  <path d="M20 60 L108 24 L60 80 Z" fill="#e6ecff"/>
+</svg>

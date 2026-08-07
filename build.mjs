@@ -10,10 +10,11 @@ const STATIC = [
   ['manifest.json', 'manifest.json'],
   ['src/popup.html', 'popup.html'],
   ['src/badge.css', 'badge.css'],
+  ['src/icons', 'icons'],
 ];
 
 function copyStatic() {
-  for (const [from, to] of STATIC) cpSync(from, `dist/${to}`);
+  for (const [from, to] of STATIC) cpSync(from, `dist/${to}`, { recursive: true });
 }
 
 rmSync('dist', { recursive: true, force: true });
