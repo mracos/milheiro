@@ -39,6 +39,9 @@ export default defineConfig({
   },
   safariInstall: {
     team: '693Z55YX47',
-    sign: 'auto',
+    // adhoc works without adding your Apple ID to Xcode (needs Safari > Develop
+    // > Allow Unsigned Extensions). Switch to 'auto' once the account is set up
+    // for stable signing. Override per-run with WXT_SAFARI_SIGN.
+    sign: 'adhoc',
   },
 });
