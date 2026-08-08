@@ -7,6 +7,9 @@ import { join } from 'node:path';
 // module hook (not a config hook) it runs in module-registration order — list it
 // BEFORE wxt-module-safari-xcode so the icons are in place before the converter
 // packages them into the .app.
+//
+// TODO: once wxt-dev/wxt#1544 (auto-icons variants) ships, delete this whole
+// module and just declare the active variant in autoIcons config instead.
 export default defineWxtModule({
   name: 'active-icons',
   setup(wxt) {
