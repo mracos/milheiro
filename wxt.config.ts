@@ -17,9 +17,12 @@ export default defineConfig({
   // safari-install must come after safari-xcode: it xcodebuilds the project
   // that safari-xcode generates.
   modules: ['@wxt-dev/auto-icons', 'wxt-module-safari-xcode', 'wxt-module-safari-install'],
-  // Generate every icon size from one SVG at build time (no committed PNGs).
+  // auto-icons makes the default (dormant, grayscale) set. The active/color set
+  // (used by setIcon when a tab has miles offers) is generated into public/ by
+  // `npm run icons` before the build (see scripts/gen-active-icons.mjs), since
+  // auto-icons can't do a second variant (wxt-dev/wxt#1544).
   autoIcons: {
-    baseIconPath: 'assets/icon.svg',
+    baseIconPath: 'assets/icon-gray.svg',
     developmentIndicator: false,
   },
   manifest: {

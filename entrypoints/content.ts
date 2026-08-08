@@ -25,6 +25,12 @@ export default defineContentScript({
     let baseline: number | string = DEFAULT_BASELINE;
     let observer: MutationObserver | null = null;
 
+    // Tell the background how many flights we annotated, so it can light up the
+    // toolbar icon + badge. 0 on load resets the icon for this tab.
+    const notify = (count: number) =>
+      browser.runtime.sendMessage({ type: 'milheiro:active', count }).catch(() => {});
+    notify(0);
+
     window.addEventListener('message', (ev: MessageEvent) => {
       if (ev.source !== window) return;
       const d = ev.data;
@@ -53,6 +59,7 @@ export default defineContentScript({
         /* storage unavailable */
       }
       inject();
+      notify(new Set(offers.map((o) => o.flightIndex)).size);
       // LATAM is an SPA: cards render lazily and brands appear on expand.
       if (!observer) {
         observer = new MutationObserver(debounce(inject, 150));
