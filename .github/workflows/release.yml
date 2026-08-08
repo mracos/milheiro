@@ -1,0 +1,30 @@
+name: release
+
+# Builds installable zips for Chrome and Firefox and attaches them to the run
+# (and to the GitHub Release when triggered by a tag). Safari isn't here: it
+# needs macOS + Xcode signing, so build it locally with `npm run build:safari`.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci
+      - run: npx wxt zip
+      - run: npx wxt zip -b firefox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: milheiro-extensions
+          path: .output/*.zip
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: .output/*.zip

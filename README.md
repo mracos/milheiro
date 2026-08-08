@@ -1,8 +1,13 @@
 # milheiro
 
 Milhas ou reais? Extensão de browser que, na LATAM, anota cada voo e cada tarifa
-com o **R$/milheiro** e o veredito contra o **seu baseline** - direto na interface
+com o **R$/milheiro** e o veredito contra o **seu baseline**, direto na interface
 deles, no modo milhas (onde a LATAM esconde o preço em dinheiro).
+
+<!-- Mockup (Playwright não loga no LATAM Pass); troque por um print real do
+     modo milhas logado quando der. -->
+
+![Chip de R$/milheiro num voo da LATAM](docs/screenshot.png)
 
 ## A ideia
 
@@ -28,8 +33,9 @@ R$/milheiro = tarifa em reais / milhas × 1000
   traz a tarifa em reais (`priceWithOutTax`) ao lado das milhas, então não precisa
   de segunda request. O content script casa cada oferta com o card/tarifa da LATAM
   por `data-testid` (`flight-info-i-amount`, `flight-i-price-BRAND`) e injeta o chip.
-- **Popup (manual):** clica no ícone, cola preço + opções de milhas (ex: o slider
-  milhas+dinheiro), recebe o veredito com análise marginal. Config do baseline aqui.
+- **Popup:** config do **baseline** (o único número de julgamento).
+- **Ícone da barra:** cinza dormente; numa aba com milhas ele **acende (colorido)**
+  e ganha um **badge verde** com a contagem de voos anotados.
 
 ## Stack
 
@@ -48,6 +54,10 @@ npm run test:integration  # Playwright: drift da API/DOM da LATAM (nightly no CI
 ```
 
 ## Instalar
+
+Sem clonar: baixe o zip do **[último release](../../releases)** (ou dos artefatos
+do workflow `release`) e carregue descompactado. Chrome/Firefox são buildados no
+CI; Safari precisa de macOS + Xcode (build local).
 
 ### Chrome / Edge / Brave
 
