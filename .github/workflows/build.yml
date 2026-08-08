@@ -1,8 +1,8 @@
 name: build
 
-# Validates and builds installable zips on every push (and on demand). On main,
-# each build is published as a prerelease so the zips live on the Releases page
-# (not just as run artifacts). Safari isn't here (needs macOS + Xcode).
+# Validates and builds installable artifacts on every push (and on demand). On
+# main, each build is published as a release: Chrome + Firefox zips (Linux) plus
+# the Safari .dmg (macOS runner, adhoc/unsigned — no secrets needed).
 on:
   push: {}
   workflow_dispatch: {}
@@ -32,5 +32,24 @@ jobs:
         with:
           tag_name: build-${{ github.run_number }}
           name: build ${{ github.run_number }}
-          prerelease: true
           files: .output/*.zip
+
+  # Safari needs macOS + Xcode; runs after `build` created the release and just
+  # attaches the .dmg. macOS runner minutes are ~10x, so it's main-only.
+  dmg:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci
+      - run: WXT_SAFARI_DMG=1 WXT_SAFARI_NO_INSTALL=1 WXT_SAFARI_SIGN=adhoc npm run build:safari
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: build ${{ github.run_number }}
+          files: .output/Milheiro.dmg
