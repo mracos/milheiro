@@ -1,11 +1,14 @@
 name: build
 
-# Validates and builds installable zips on every push (and on demand). The zips
-# (Chrome + Firefox) are uploaded as artifacts on each run — download, unzip,
-# load unpacked. Safari isn't here (needs macOS + Xcode: npm run build:safari).
+# Validates and builds installable zips on every push (and on demand). On main,
+# each build is published as a prerelease so the zips live on the Releases page
+# (not just as run artifacts). Safari isn't here (needs macOS + Xcode).
 on:
   push: {}
   workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -24,3 +27,10 @@ jobs:
         with:
           name: milheiro-${{ github.sha }}
           path: .output/*.zip
+      - uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: build ${{ github.run_number }}
+          prerelease: true
+          files: .output/*.zip
