@@ -52,9 +52,9 @@ npm run test:integration  # Playwright: drift da API/DOM da LATAM (nightly no CI
 
 ## Instalar
 
-Sem clonar: baixe o zip do **[último release](../../releases)** (ou dos artefatos
-do workflow `release`) e carregue descompactado. Chrome/Firefox são buildados no
-CI; Safari precisa de macOS + Xcode (build local).
+Sem clonar: baixe o zip dos **artefatos** do workflow `build` (aba Actions → um
+run → Artifacts) e carregue descompactado. Chrome/Firefox são buildados no CI a
+cada push; Safari precisa de macOS + Xcode (build local).
 
 ### Chrome / Edge / Brave
 

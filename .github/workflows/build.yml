@@ -1,0 +1,26 @@
+name: build
+
+# Validates and builds installable zips on every push (and on demand). The zips
+# (Chrome + Firefox) are uploaded as artifacts on each run — download, unzip,
+# load unpacked. Safari isn't here (needs macOS + Xcode: npm run build:safari).
+on:
+  push: {}
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+      - run: npm ci
+      - run: npm run check # format + lint + typecheck + tests
+      - run: npx wxt zip
+      - run: npx wxt zip -b firefox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: milheiro-${{ github.sha }}
+          path: .output/*.zip
