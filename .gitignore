@@ -3,6 +3,5 @@ node_modules/
 .DS_Store
 .wxt/
 .output/
-public/icon-active/
 .env.local
 .env.*.local
