@@ -4,9 +4,6 @@ Milhas ou reais? Extensão de browser que, na LATAM, anota cada voo e cada tarif
 com o **R$/milheiro** e o veredito contra o **seu baseline**, direto na interface
 deles, no modo milhas (onde a LATAM esconde o preço em dinheiro).
 
-<!-- Mockup (Playwright não loga no LATAM Pass); troque por um print real do
-     modo milhas logado quando der. -->
-
 ![Chip de R$/milheiro num voo da LATAM](docs/screenshot.png)
 
 ## A ideia
