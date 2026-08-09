@@ -1,10 +1,12 @@
-name: nightly-latam-drift
+name: weekly-latam-drift
 
 # Detects when LATAM changes their offers API schema or the data-testids the
 # extension anchors chips to, before it silently breaks in the browser.
+# Weekly, not nightly: LATAM throttles automated searches, so daily runs add
+# noise without adding signal.
 on:
   schedule:
-    - cron: '17 6 * * *' # 06:17 UTC daily
+    - cron: '17 6 * * 1' # Mondays 06:17 UTC
   workflow_dispatch: {}
 
 jobs:
@@ -18,4 +20,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:integration
+      # Headed under xvfb: headless Chromium gets fingerprinted by Akamai into a
+      # degraded search path that never renders the flight cards.
+      - run: xvfb-run -a npm run test:integration

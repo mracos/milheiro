@@ -29,15 +29,17 @@
     "@types/chrome": "^0.2.5",
     "@types/node": "^26.1.2",
     "@wxt-dev/auto-icons": "^1.1.2",
-    "wxt-module-safari-install": "*",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.9.0",
     "playwright": "^1.62.1",
+    "playwright-extra": "^4.3.6",
     "prettier": "^3.9.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.66.0",
     "wxt": "^0.21.3",
+    "wxt-module-safari-install": "*",
     "wxt-module-safari-xcode": "^0.2.2"
   }
 }
