@@ -1,88 +1,59 @@
 # milheiro
 
-Milhas ou reais? Extensão de browser que, na LATAM, anota cada voo e cada tarifa
+Extensão de browser que, na LATAM, anota cada voo e cada tarifa
 com o **R$/milheiro** e o veredito contra o **seu baseline**, direto na interface
 deles, no modo milhas (onde a LATAM esconde o preço em dinheiro).
 
 ![Chip de R$/milheiro num voo da LATAM](docs/screenshot.png)
 
-## A ideia
-
-Pagar em milhas é trocar milhas pela tarifa em dinheiro. O valor de cada milha:
-
-```
-R$/milheiro = tarifa em reais / milhas × 1000
-```
-
-- **Maior R$/milheiro = melhor uso das milhas.** Verde se acima do seu baseline,
-  vermelho abaixo.
-- O **baseline** é o único número de julgamento (quanto uma milha vale pra você):
-  casual ~R$20, acumulador mirando executiva ~R$45.
-- **Doméstico LATAM é fixo (~R$28,8/milheiro)**: eles definem as milhas como
-  `tarifa / 0,0288`, então a razão não varia. O chip lidera com o **valor em R$**
-  (que varia por voo) e deixa a taxa como subscrito. A variação de verdade (e a
-  cor mudando) aparece em internacional/executiva/promoções.
-
-## Como funciona
-
-- **Chips inline (automático):** na latamairlines.com, um interceptor captura o
-  JSON de tarifas (`/bff/air-offers/v2/offers/search`). O payload de milhas já
-  traz a tarifa em reais (`priceWithOutTax`) ao lado das milhas, então não precisa
-  de segunda request. O content script casa cada oferta com o card/tarifa da LATAM
-  por `data-testid` (`flight-info-i-amount`, `flight-i-price-BRAND`) e injeta o chip.
-- **Popup:** config do **baseline** (o único número de julgamento).
-- **Ícone da barra:** cinza dormente; numa aba com milhas ele **acende (colorido)**
-  e ganha um **badge verde** com a contagem de voos anotados.
-
 ## Stack
 
-TypeScript + [WXT](https://wxt.dev). `entrypoints/` são os scripts; `utils/calc.ts`
-é o núcleo puro (testado). O Safari é gerado por config-as-code via
-`wxt-module-safari-xcode` (time/bundle id em `wxt.config.ts`).
-
-```sh
-npm install          # roda `wxt prepare` (gera tipos) no postinstall
-npm run dev          # dev server (Chrome) com HMR
-npm run build        # bundla pra .output/chrome-mv3
-npm run typecheck    # wxt prepare && tsc --noEmit
-npm run lint         # eslint
-npm test             # node --test (núcleo, roda .ts direto)
-npm run test:integration  # Playwright: drift da API/DOM da LATAM (nightly no CI)
-```
+TypeScript + [WXT](https://wxt.dev).
 
 ## Instalar
 
-Sem clonar: baixe o zip dos **artefatos** do workflow `build` (aba Actions → um
-run → Artifacts) e carregue descompactado. Chrome/Firefox são buildados no CI a
-cada push; Safari precisa de macOS + Xcode (build local).
+### Safari (macOS)
+
+Baixe o `Milheiro.dmg` dos [releases](https://github.com/mracos/milheiro/releases/latest)
+e arraste pra `Applications` (ou `brew install --cask mracos/tap/milheiro`). Depois:
+
+1. Abra o Milheiro.app uma vez, é o que registra a extensão. O build é adhoc,
+   então o macOS barra a primeira abertura: libere em Ajustes do Sistema >
+   Privacidade e Segurança > "Abrir Mesmo Assim".
+2. Ligue **Safari > Ajustes > Desenvolvedor > Permitir extensões não assinadas**.
+   Sem isso o Safari esconde a extensão da lista, e o toggle desliga sozinho a
+   cada vez que o Safari reabre.
+3. Habilite em **Safari > Ajustes > Extensões**.
+
+### Chrome / Edge / Brave / Firefox
+
+Baixe o zip dos **artefatos** dos releases.
+
+## Build do zero
 
 ### Chrome / Edge / Brave
 
-`npm run build` → `chrome://extensions` → Developer mode → **Load unpacked** →
-`.output/chrome-mv3`. (Ou `npm run dev`, que abre o browser sozinho.)
+`npm run build` -> `chrome://extensions` -> Developer mode -> **Load unpacked** -> `.output/chrome-mv3`.
+
+(Ou `npm run dev`, que abre o browser sozinho.)
 
 ### Firefox
 
-`npm run build:firefox` → `about:debugging` → **Load Temporary Add-on** →
-`.output/firefox-mv2/manifest.json`.
+`npm run build:firefox` -> `about:debugging` -> **Load Temporary Add-on** -> `.output/firefox-mv2/manifest.json`.
 
 ### Safari (macOS)
 
 ```sh
-cp .env.example .env.local   # e preencha APPLE_TEAM_ID (só pra sign 'auto')
-npm run build:safari
+npm run build:safari    # build + assina o app (não instala)
+npm run safari:install  # o mesmo, e copia pra /Applications e abre
 ```
 
-Dois módulos WXT fazem tudo num comando: `wxt-module-safari-xcode` gera+configura
-o projeto Xcode (bundle `br.com.mracos.milheiro`), e o `wxt-module-safari-install`
-(local, em `packages/`) roda `xcodebuild`, assina e instala em `/Applications`.
-Depois: Safari → Ajustes → Extensões → ativa Milheiro. Signing é `adhoc` por
-padrão (config em `safariInstall.sign`); com adhoc também: Desenvolver → Permitir
-Extensões Não Assinadas.
+Build local não passa por download, então não tem quarentena pra tirar. Mas
+continua sendo adhoc: vale o mesmo "Permitir extensões não assinadas" de cima,
+e aí habilite em Safari > Ajustes > Extensões.
 
 ## Testes
 
-Núcleo (`parseBRL`, `analyze`, `readLatamOffers`, `summarizeLatam`, `chipFor`) em
-`test/calc.test.ts`, contra um fixture real (`test/fixtures/`). O
-`test/integration/latam.test.ts` (Playwright, nightly no GitHub Actions) detecta
-quando a LATAM muda o schema da API ou os `data-testid` que o content script usa.
+```sh
+npm test
+```

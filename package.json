@@ -9,6 +9,7 @@
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "build:safari": "wxt build -b safari",
+    "safari:install": "WXT_SAFARI_INSTALL=1 wxt build -b safari",
     "zip": "wxt zip",
     "postinstall": "wxt prepare",
     "test": "node --test \"test/*.test.ts\"",

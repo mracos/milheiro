@@ -48,7 +48,7 @@ export default defineConfig({
     bundleIdentifier: 'br.com.mracos.milheiro',
     developmentTeam: APPLE_TEAM_ID,
     projectType: 'macos',
-    openProject: false, // safari-install builds + installs headlessly instead
+    openProject: false, // safari-install builds headlessly instead
   },
   safariInstall: {
     team: APPLE_TEAM_ID,
@@ -56,5 +56,8 @@ export default defineConfig({
     // > Allow Unsigned Extensions). Switch to 'auto' once the account is set up
     // for stable signing. Override per-run with WXT_SAFARI_SIGN.
     sign: 'adhoc',
+    // Installing into /Applications is opt-in: `npm run safari:install`
+    // (WXT_SAFARI_INSTALL=1), so a plain build stays a build.
+    install: false,
   },
 });
