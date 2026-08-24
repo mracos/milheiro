@@ -22,9 +22,6 @@
   },
   "license": "MIT",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.2.5",
@@ -40,7 +37,7 @@
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.66.0",
     "wxt": "^0.21.3",
-    "wxt-module-safari-install": "*",
+    "wxt-module-safari-install": "^0.1.0",
     "wxt-module-safari-xcode": "^0.2.2"
   }
 }
